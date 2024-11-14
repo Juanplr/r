@@ -55,7 +55,6 @@ Sub EnviarCorreosMasivos()
             
             ' Cuerpo del mensaje en formato HTML con la firma de imagen
             .HTMLBody = "<p>" & Cuerpo & "</p>" & _
-                        "<p>Saludos,<br></p>" & _
                         "<img src='cid:FirmaImagen'>" & _
                         .HTMLBody
             
