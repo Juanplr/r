@@ -1,0 +1,82 @@
+Sub EnviarCorreosMasivos()
+    Dim OutlookApp As Object
+    Dim Correo As Object
+    Dim Fila As Integer
+    Dim Hoja As Worksheet
+    Dim Destinatario As String
+    Dim ArchivoPDF As String
+    Dim Asunto As String
+    Dim Cuerpo As String
+    Dim FirmaImagen As String
+    Dim FirmaAdjunto As Object
+
+    ' Configuración de asunto y cuerpo del mensaje
+    Asunto = "Prueba de correos"
+    Cuerpo = "Envio de correo"
+    
+    ' Ruta de la imagen de la firma
+    FirmaImagen = "C:\Users\juanl\Documents\correo\firma.PNG" ' Cambia esta ruta a la ubicación completa de tu imagen de firma
+    
+    ' Referencia a la hoja activa
+    Set Hoja = ThisWorkbook.Sheets("Hoja1") ' Cambia "Hoja1" al nombre de tu hoja de Excel
+    
+    ' Crear instancia de Outlook
+    On Error Resume Next
+    Set OutlookApp = CreateObject("Outlook.Application")
+    On Error GoTo 0
+    
+    ' Verifica que Outlook esté disponible
+    If OutlookApp Is Nothing Then
+        MsgBox "Outlook no está disponible.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Empieza en la fila 2 para omitir encabezados
+    Fila = 2
+    
+    ' Bucle a través de cada fila con datos
+    While Hoja.Cells(Fila, 1).Value <> ""
+        Destinatario = Hoja.Cells(Fila, 4).Value
+        ArchivoPDF = Hoja.Cells(Fila, 2).Value
+        
+        ' Crear el correo
+        Set Correo = OutlookApp.CreateItem(0)
+        With Correo
+            .To = Destinatario
+            .Subject = Asunto
+            
+            ' Adjuntar la firma de imagen con cid
+            If Dir(FirmaImagen) <> "" Then
+                Set FirmaAdjunto = .Attachments.Add(FirmaImagen)
+                FirmaAdjunto.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FirmaImagen"
+            Else
+                MsgBox "Imagen de firma no encontrada: " & FirmaImagen, vbExclamation
+            End If
+            
+            ' Cuerpo del mensaje en formato HTML con la firma de imagen
+            .HTMLBody = "<p>" & Cuerpo & "</p>" & _
+                        "<p>Saludos,<br></p>" & _
+                        "<img src='cid:FirmaImagen'>" & _
+                        .HTMLBody
+            
+            ' Adjuntar el archivo PDF
+            If Dir(ArchivoPDF) <> "" Then ' Verifica que el archivo exista
+                .Attachments.Add ArchivoPDF
+            Else
+                MsgBox "Archivo no encontrado: " & ArchivoPDF, vbExclamation
+            End If
+            
+            ' Enviar el correo
+            .Send
+        End With
+        
+        ' Siguiente fila
+        Fila = Fila + 1
+    Wend
+    
+    MsgBox "Correos enviados correctamente.", vbInformation
+
+    ' Limpiar
+    Set Correo = Nothing
+    Set OutlookApp = Nothing
+End Sub
