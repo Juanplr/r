@@ -9,13 +9,14 @@ Sub EnviarCorreosMasivos()
     Dim Cuerpo As String
     Dim FirmaImagen As String
     Dim FirmaAdjunto As Object
+    Dim ArchivoValido As Boolean
 
     ' Configuración de asunto y cuerpo del mensaje
     Asunto = "Prueba de correos"
     Cuerpo = "Envio de correo"
     
     ' Ruta de la imagen de la firma
-    FirmaImagen = "C:\Users\juanl\Documents\correo\firma.PNG" ' Cambia esta ruta a la ubicación completa de tu imagen de firma
+    FirmaImagen = "C:\Users\juanl\Documents\Envio de correos\firma.PNG" ' Cambia esta ruta a la ubicación completa de tu imagen de firma
     
     ' Referencia a la hoja activa
     Set Hoja = ThisWorkbook.Sheets("Hoja1") ' Cambia "Hoja1" al nombre de tu hoja de Excel
@@ -38,36 +39,44 @@ Sub EnviarCorreosMasivos()
     While Hoja.Cells(Fila, 1).Value <> ""
         Destinatario = Hoja.Cells(Fila, 4).Value
         ArchivoPDF = Hoja.Cells(Fila, 2).Value
+        ArchivoValido = True
         
-        ' Crear el correo
-        Set Correo = OutlookApp.CreateItem(0)
-        With Correo
-            .To = Destinatario
-            .Subject = Asunto
-            
-            ' Adjuntar la firma de imagen con cid
-            If Dir(FirmaImagen) <> "" Then
+        ' Verificar existencia de archivo PDF
+        If Dir(ArchivoPDF) = "" Then
+            MsgBox "Archivo PDF no encontrado: " & ArchivoPDF, vbExclamation
+            ArchivoValido = False
+        End If
+
+        ' Verificar existencia de imagen de firma
+        If Dir(FirmaImagen) = "" Then
+            MsgBox "Imagen de firma no encontrada: " & FirmaImagen, vbExclamation
+            ArchivoValido = False
+        End If
+
+        ' Solo enviar correo si ambos archivos están disponibles
+        If ArchivoValido Then
+            ' Crear el correo
+            Set Correo = OutlookApp.CreateItem(0)
+            With Correo
+                .To = Destinatario
+                .Subject = Asunto
+                
+                ' Adjuntar la firma de imagen con cid
                 Set FirmaAdjunto = .Attachments.Add(FirmaImagen)
                 FirmaAdjunto.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FirmaImagen"
-            Else
-                MsgBox "Imagen de firma no encontrada: " & FirmaImagen, vbExclamation
-            End If
-            
-            ' Cuerpo del mensaje en formato HTML con la firma de imagen
-            .HTMLBody = "<p>" & Cuerpo & "</p>" & _
-                        "<img src='cid:FirmaImagen'>" & _
-                        .HTMLBody
-            
-            ' Adjuntar el archivo PDF
-            If Dir(ArchivoPDF) <> "" Then ' Verifica que el archivo exista
+                
+                ' Cuerpo del mensaje en formato HTML con la firma de imagen
+                .HTMLBody = "<p>" & Cuerpo & "</p>" & _
+                            "<img src='cid:FirmaImagen'>" & _
+                            .HTMLBody
+                
+                ' Adjuntar el archivo PDF
                 .Attachments.Add ArchivoPDF
-            Else
-                MsgBox "Archivo no encontrado: " & ArchivoPDF, vbExclamation
-            End If
-            
-            ' Enviar el correo
-            .Send
-        End With
+                
+                ' Enviar el correo
+                .Send
+            End With
+        End If
         
         ' Siguiente fila
         Fila = Fila + 1
